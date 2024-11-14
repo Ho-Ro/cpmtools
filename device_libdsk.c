@@ -76,8 +76,10 @@ const char *Device_setGeometry(struct Device *this, int secLength, int sectrk, i
   this->secLength=secLength;
   this->sectrk=sectrk;
   this->tracks=tracks;
-  /* Must be an even multiple of sector size */
-  assert(offset%secLength==0);
+  /* Ho-Ro: Allow offset sizes that are no multiples of sector lenght. */
+  /* Needed for yaze-ag ydsk format that has a header size of 128 byte */
+  /* regardless of its sector length (that can be up to 2048 bytes).   */
+  /* assert(offset%secLength==0); */
   this->offset=offset;
   /* If a geometry is named in diskdefs, use it */
   if (libdskGeometry && libdskGeometry[0])

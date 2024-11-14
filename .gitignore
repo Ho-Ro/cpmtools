@@ -1,0 +1,32 @@
+# editor and development artifacts
+*~
+.*~
+*.bak
+*.new
+*.old
+*.orig
+
+# checkinstall files
+backup-*
+*-pak
+*.deb
+
+# configure artifacts
+Makefile
+config.h
+config.log
+config.status
+
+# build artifacts
+*.o
+
+# binaries
+cpmchattr
+cpmchmod
+cpmcp
+cpmls
+cpmrm
+
+fsck.cpm
+fsed.cpm
+mkfs.cpm
