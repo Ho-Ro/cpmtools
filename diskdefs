@@ -2063,3 +2063,40 @@ diskdef yaze-ag-8M
   boottrk 0
   os 3
 end
+
+
+# Z80-MBC2 CP/M 2.2 DISK 0 ONLY (ONE RESERVED TRACK FOR CP/M 2.2)
+diskdef z80mbc2-d0
+  seclen 512
+  tracks 512
+  sectrk 32
+  blocksize 4096
+  maxdir 512
+  skew 0
+  boottrk 1
+  os 2.2
+end
+
+# Z80-MBC2 CP/M 2.2 DISK 1-15
+diskdef z80mbc2-d1
+  seclen 512
+  tracks 512
+  sectrk 32
+  blocksize 4096
+  maxdir 512
+  skew 0
+  boottrk 0
+  os 2.2
+end
+
+# Z80-MBC2 CP/M 3 (DISK 0-15)
+diskdef z80mbc2-cpm3
+  seclen 512
+  tracks 512
+  sectrk 32
+  blocksize 4096
+  maxdir 512
+  skew 0
+  boottrk 1
+  os 3
+end
