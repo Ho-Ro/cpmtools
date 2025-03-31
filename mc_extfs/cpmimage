@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# file ~/local/share/mc/extfs.d/cpmimage
+# mc extfs for CP/M image files using cpmtools
+# suported image formats:
+#   Z80-MBC2:   Regex=^DS[0-2]N(0[0-9]|1[0-5])\.DSK$
+#   yaze-ag:    Type=^disk\ image\ data\ \(YAZE\)$
+
+# override any locale for dates
+unset LC_ALL
+LC_TIME=C
+export LC_TIME
+
+
+umask 077
+format=z80mbc2-cpm3 # default
+
+if [ $1 == "view" ]; then
+    image="$MC_EXT_FILENAME"
+else
+    image="$2"
+fi
+
+dskname=$(basename "$image")
+
+if [[ $dskname =~ ".DSK" ]]; then
+    diskset="${dskname:0:3}"
+    disknum="${dskname:4:2}"
+    case $diskset in
+        DS0|DS1) # CP/M 2.2 / QPM
+            if [ $disknum = "00" ]; then
+                format=z80mbc2-d0
+            else
+                format=z80mbc2-d1
+            fi
+        ;;
+        DS2) # CP/M 3
+            format=z80mbc2-cpm3
+        ;;
+    esac
+elif [[ $dskname =~ ".ydsk" ]]; then
+    size=$(($(wc -c $image | cut -d\  -f1)/1024))
+    if [ $size -ge 1024 ]; then
+        format=yaze-ag-$(($size/1024))M
+    else
+        format=yaze-ag-${size}K
+    fi
+fi
+
+cpmname=$(echo $3 | tr -d /)              # remove directory divider
+linuxname=$4
+
+case "$1" in
+    view) # F3: just show the directory similar to "ls -l" w/o link count and user/group
+        echo '#' CP/M image format: $format # produce at least one line even when there are no files
+        echo
+        cpmls -f $format -l ${MC_EXT_FILENAME}
+        exit 0
+    ;;
+    list) # create a directory structure for the vfs
+        user=$(id -un)  # unix user
+        group=$(id -gn) # unix group
+        cpmuser=0:      # start with default
+        # now get the cp/m listing
+        cpmls -f $format -l $image | while read mod size month day time cpmname
+        do
+            if [[ $mod ]]; then                 # not empty
+                if [[ $mod =~ ":" ]] ; then     # this is user number
+                    cpmuser=$mod                # remember it
+                else                            # normal file entry
+                    mod=$(echo $mod | tr x -)   # remove executable status
+                    # write out file attributes and filename (user becomes directory)
+                    echo "$mod 1 $user $group $size $month $day $time $cpmuser/$cpmname"
+                fi
+            fi
+        done
+        exit 0
+    ;;
+    copyout) # copy one file from the cpm image to the linux vfs
+        cpmcp -f $format "$image" "$cpmname" "$linuxname"
+        exit 0
+    ;;
+    copyin) # copy one linux vfs file to the cpm image
+        cpmcp -f $format "$image" "$linuxname" "$cpmname"
+        exit 0
+    ;;
+    mkdir) # do nothing - user num will be part of cpm file name
+        exit 0
+    ;;
+    rm) # remove one file from the cpm image
+        cpmrm -f $format "$image" "$cpmname"
+        exit 0
+    ;;
+esac
+
+exit 1
+
+############
+# cpmtools #
+############
+# Usage: cpmls [-f format] [-d|-D|-F|-A|[-l][-c][-i]] [-u] image [file ...]
+# Usage: cpmcp [-f format] [-p] [-t] image user:file file
+#        cpmcp [-f format] [-p] [-t] image user:file ... directory
+#        cpmcp [-f format] [-p] [-t] image file user:file
+#        cpmcp [-f format] [-p] [-t] image file ... user:
+# Usage: cpmrm [-f format] [-T dsktype] [-u] image pattern ...
+#
+# yaze-ag images require modified cpmtools from

@@ -1356,7 +1356,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-diskdefs         Specify diskdefs location
-  --with-defformat        Specify default format (ibm-3740)
+  --with-defformat        Specify default format (z80mbc2-cpm3)
   --with-libdsk           Specify path to libdsk library
 
 Some influential environment variables:
@@ -2626,7 +2626,7 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 VERSION=2.23
-UPDATED='November 2, 2022'
+UPDATED='November 2, 2022 (20250125 horo)'
 
 DEVICE="posix"
 TERM="curses"
@@ -3899,7 +3899,7 @@ if test ${with_defformat+y}
 then :
   withval=$with_defformat; DEFFORMAT="$withval"
 else $as_nop
-  DEFFORMAT="ibm-3740"
+  DEFFORMAT="z80mbc2-cpm3"
 fi
 
 

@@ -2,7 +2,7 @@ AC_INIT(cpmfs.c)
 AC_CONFIG_HEADERS([config.h])
 AC_CANONICAL_HOST
 VERSION=2.23
-UPDATED='November 2, 2022'
+UPDATED='November 2, 2022 (20250125 horo)'
 
 DEVICE="posix"
 TERM="curses"
@@ -39,8 +39,8 @@ DISKDEFS='${datarootdir}/diskdefs'
 
 AC_ARG_WITH(diskdefs,[  --with-diskdefs         Specify diskdefs location], 
 		[DISKDEFS="$withval"], [DISKDEFS="$DISKDEFS"])
-AC_ARG_WITH(defformat,[  --with-defformat        Specify default format (ibm-3740)], 
-		[DEFFORMAT="$withval"], [DEFFORMAT="ibm-3740"])
+AC_ARG_WITH(defformat,[  --with-defformat        Specify default format (z80mbc2-cpm3)], 
+		[DEFFORMAT="$withval"], [DEFFORMAT="z80mbc2-cpm3"])
 AC_ARG_WITH(libdsk,   [  --with-libdsk           Specify path to libdsk library], 
 		[LIBDSK="$withval"], [LIBDSK=""])
 

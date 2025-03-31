@@ -1,0 +1,6 @@
+### Handle CP/M disk images as virtual filesystem for MidnightCommander
+
+cpmimage will be installed from the *.deb file as /usr/lib/mc/extfs.d/cpmimage.
+
+Edit ~/config/mc/mc.ext.ini and put the content of cmpimage.ini just before the
+include section near the bottom of the file.
