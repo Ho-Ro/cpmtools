@@ -1980,6 +1980,7 @@ end
 # The only different parameter is the number of tracks (1 track = 256 KByte)
 #
 
+#  spt=128, bsh=4, exm=1, dsm=127, drm=1023, off=0
 diskdef yaze-ag-256K
   seclen 2048
   tracks 1
@@ -1992,6 +1993,7 @@ diskdef yaze-ag-256K
   os 3
 end
 
+#  spt=128, bsh=4, exm=1, dsm=255, drm=1023, off=0
 diskdef yaze-ag-512K
   seclen 2048
   tracks 2
@@ -2004,6 +2006,7 @@ diskdef yaze-ag-512K
   os 3
 end
 
+#  spt=128, bsh=4, exm=0, dsm=511, drm=1023, off=0
 diskdef yaze-ag-1M
   seclen 2048
   tracks 4
@@ -2016,6 +2019,7 @@ diskdef yaze-ag-1M
   os 3
 end
 
+#  spt=128, bsh=4, exm=0, dsm=1023, drm=1023, off=0
 diskdef yaze-ag-2M
   seclen 2048
   tracks 8
@@ -2028,18 +2032,7 @@ diskdef yaze-ag-2M
   os 3
 end
 
-diskdef yaze-ag-3M
-  seclen 2048
-  tracks 12
-  sectrk 128
-  blocksize 2048
-  maxdir 1024
-  skew 0
-  offset 128
-  boottrk 0
-  os 3
-end
-
+#  spt=128, bsh=4, exm=0, dsm=2047, drm=1023, off=0
 diskdef yaze-ag-4M
   seclen 2048
   tracks 16
@@ -2052,6 +2045,7 @@ diskdef yaze-ag-4M
   os 3
 end
 
+#  spt=128, bsh=4, exm=0, dsm=4095, drm=1023, off=0
 diskdef yaze-ag-8M
   seclen 2048
   tracks 32
@@ -2065,6 +2059,10 @@ diskdef yaze-ag-8M
 end
 
 
+# Z0-MBC2 CP/M disk images have almost identical format:
+# 8MB disk size, 512B sector size, 4096B block size, 512 dir entries
+# Only difference is the number of reserved tracks (boottrk)
+
 # Z80-MBC2 CP/M 2.2 DISK 0 ONLY (ONE RESERVED TRACK FOR CP/M 2.2)
 diskdef z80mbc2-d0
   seclen 512
@@ -2077,7 +2075,7 @@ diskdef z80mbc2-d0
   os 2.2
 end
 
-# Z80-MBC2 CP/M 2.2 DISK 1-15
+# Z80-MBC2 CP/M 2.2 DISK 1-15 (NO RESERVED TRACKS)
 diskdef z80mbc2-d1
   seclen 512
   tracks 512
@@ -2089,7 +2087,7 @@ diskdef z80mbc2-d1
   os 2.2
 end
 
-# Z80-MBC2 CP/M 3 (DISK 0-15)
+# Z80-MBC2 CP/M 3 (DISK 0-15) (ONE RESERVED TRACK)
 diskdef z80mbc2-cpm3
   seclen 512
   tracks 512
