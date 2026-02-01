@@ -106,7 +106,6 @@ install:	all
 		$(INSTALL_DATA) fsed.cpm.1 $(DESTDIR)$(MANDIR)/man1/fsed.cpm.1
 		$(INSTALL_DATA) cpm.5 $(DESTDIR)$(MANDIR)/man5/cpm.5
 		$(INSTALL_DATA) diskdefs.5 $(DESTDIR)$(MANDIR)/man5/diskdefs.5
-		[ -d /usr/lib/mc/extfs.d ] && $(INSTALL) -m 755 mc_extfs/cpmimage /usr/lib/mc/extfs.d
 
 clean:
 		rm -f *$(OBJEXT) *~
