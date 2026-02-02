@@ -1,8 +1,8 @@
 AC_INIT(cpmfs.c)
 AC_CONFIG_HEADERS([config.h])
 AC_CANONICAL_HOST
-VERSION=2.23
-UPDATED='November 2, 2022 (20250125 horo)'
+VERSION=2.24.horo
+UPDATED='November 18, 2025 (20260202 horo)'
 
 DEVICE="posix"
 TERM="curses"

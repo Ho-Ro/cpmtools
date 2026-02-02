@@ -1944,8 +1944,6 @@ diskdef HP25
   os 2.2
 end
 
-
-
 diskdef yaze512
 # BSH 4 BLM 15 EXM 1 DSM 255 DRM 1023 AL0 0FFH AL1 0FFH OFS 0
 seclen 128
@@ -1959,6 +1957,109 @@ boottrk 0
 os 3
 end
 
+# ELEKTOR Junior Computer CPM-65
+diskdef JC
+  seclen 256
+  tracks 80
+  sectrk 16
+  blocksize 1024
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+  extentsize 8192
+end
+
+# Format for the CP/M-68K sim C drive images
+diskdef em68k
+  seclen 128
+  tracks 512
+  sectrk 256
+  blocksize 2048
+  maxdir 4096
+  skew 0
+  boottrk 1
+  os 3
+end
+
+# Corvette CP/M
+# Same as scp780?
+diskdef korvet
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+end
+
+# Corvette MicroDOS
+diskdef korvet3
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 3
+  os 2.2
+end
+
+# Corvette Data/NoBoot z88dk
+diskdef korvet1
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 1
+  os 2.2
+end
+
+# Vector-06C MicroDOS, RDS and CP/M-39 fdd
+diskdef vector
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 8
+  os 2.2
+end
+
+# NDR Klein Computer with CP/M 2.2 and 5.25" drives
+# Back then, those were called mini drives, as maxi was 8".
+# [nkcmini]
+# description = NKC with Libdsk
+# sides = alt
+# cylinders = 80
+# heads = 2
+# sectors = 5
+# secbase = 1
+# secsize = 1024
+# datarate = DD
+# rwgap = 82
+# fmtgap = 82
+# fm = N
+diskdef nkcmini
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 256
+  skew 0
+  boottrk 4
+  os 2.2
+  Libdsk:format nkcmini
+end
+
+############################################
+### Ho-Ro 20260202: new disk definitions ###
+############################################
 
 # z80emu cpmdsk
 diskdef z80emu

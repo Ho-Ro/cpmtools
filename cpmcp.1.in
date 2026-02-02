@@ -53,17 +53,24 @@ meaning in
 .IR sh (1)
 file name patterns.
 .PP
-On CP/M, the slash is a legal file name character.  When copying such files
+On CP/M, the slash is a legal file name character and on POSIX systems
+it is not, so on those when copying such files
 to the host, it is translated to a comma.  Filenames with a comma have that
 translated back to a slash on CP/M.  That is no restriction, because a comma
-is not a legal CP/M filename character.
+is not a legal CP/M filename character, although CP/M 2.2 silently accepts
+it despite the manual saying otherwise.
+.PP
+On other host OS there may be different file name translations.
 .\"}}}
 .SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
-.IP "\fB\-T\fP \fIlibdsk-type\fP"
-libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for raw images 
-(requires building cpmtools with support for libdsk).
+.IP "\fB\-T\fP \fIlibdsk-type\fP[,\fIlibdsk-format\fP]"
+libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for
+raw images (requires building cpmtools with support for libdsk).
+The optional \fIlibdsk-format\fP argument also specifies one of libdsk's
+CP/M disk formats (not to be confused with the diskdef supplied to the
+\fB\-f\fP option), similar to \fBlibdsk:format\fP in diskdefs.
 .IP \fB\-p\fP
 Preserve time stamps when copying files from CP/M to UNIX (not
 implemented for copying the other way so far).
@@ -85,7 +92,7 @@ CPMTOOLSFMT     Default format
 @DATADIR@/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
-This program is copyright 1997\(en2021 Michael Haardt
+This program is copyright 1997\(en2023 Michael Haardt
 <michael@moria.de>.  The Windows port is copyright 2000, 2001, 2011 John Elliott
 <jce@seasip.demon.co.uk>.
 .PP

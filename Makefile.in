@@ -24,9 +24,9 @@ LDDEPS=         @LDDEPS@
 CPPFLAGS=       @CPPFLAGS@ -DDISKDEFS=\"$(DISKDEFS)\" -DFORMAT=\"$(DEFFORMAT)\"
 STRIP=          strip
 
-MAKEDEPEND=	gcc -MM
+MAKEDEPEND=     gcc -MM
 
-DEVICEOBJ=	device_$(DEVICE)$(OBJEXT) 
+DEVICEOBJ=      device_$(DEVICE)$(OBJEXT)
 
 ALL=		cpmls$(EXEEXT) cpmrm$(EXEEXT) cpmcp$(EXEEXT) \
 		cpmchmod$(EXEEXT) cpmchattr$(EXEEXT) mkfs.cpm$(EXEEXT) \
@@ -45,8 +45,8 @@ cpmrm$(EXEEXT):		cpmrm$(OBJEXT) cpmfs$(OBJEXT) getopt$(OBJEXT) getopt1$(OBJEXT) 
 		$(CC) $(LDFLAGS) -o $@ cpmrm$(OBJEXT) cpmfs$(OBJEXT) getopt$(OBJEXT) getopt1$(OBJEXT) $(DEVICEOBJ) $(LIBS)
 		$(STRIP) $@
 
-cpmcp$(EXEEXT):		cpmcp$(OBJEXT) cpmfs$(OBJEXT) getopt$(OBJEXT) getopt1$(OBJEXT) $(DEVICEOBJ) $(LDDEPS)
-		$(CC) $(LDFLAGS) -o $@ cpmcp$(OBJEXT) cpmfs$(OBJEXT) getopt$(OBJEXT) getopt1$(OBJEXT) $(DEVICEOBJ) $(LIBS)
+cpmcp$(EXEEXT):		cpmcp$(OBJEXT) cpmfs$(OBJEXT) getopt$(OBJEXT) getopt1$(OBJEXT) $(DEVICEOBJ) filename_posix$(OBJEXT) $(LDDEPS)
+		$(CC) $(LDFLAGS) -o $@ cpmcp$(OBJEXT) cpmfs$(OBJEXT) getopt$(OBJEXT) getopt1$(OBJEXT) $(DEVICEOBJ) filename_posix$(OBJEXT) $(LIBS)
 		$(STRIP) $@
 
 cpmchmod$(EXEEXT):	cpmchmod$(OBJEXT) cpmfs$(OBJEXT) getopt$(OBJEXT) getopt1$(OBJEXT) $(DEVICEOBJ) $(LDDEPS)
@@ -108,13 +108,17 @@ install:	all
 		$(INSTALL_DATA) diskdefs.5 $(DESTDIR)$(MANDIR)/man5/diskdefs.5
 
 clean:
-		rm -f *$(OBJEXT) *~
+		rm -f *$(OBJEXT)
 
 distclean:	clean
-		rm -rf $(ALL) autom4te.cache config.log config.cache config.h config.status Makefile *.out
+		rm -rf $(ALL) autom4te.cache config.log config.cache config.h config.status Makefile *.out *~ .*~
 
 deb:		all
-		fakeroot checkinstall --install=no --backup=no --pkggroup=development
+		fakeroot checkinstall --install=no --backup=no \
+		--pkgname=cpmtools --pkggroup=development --pkgversion=2.24.horo
+
+tar:		distclean
+		(b=`pwd`; b=`basename $$b`; cd ..; tar zcvf $$b.tar.gz $$b)
 
 depend:
 		$(MAKEDEPEND) $(CPPFLAGS) *.c >.depend

@@ -18,38 +18,50 @@
 /*}}}*/
 
 /* mkfs -- make file system */ /*{{{*/
-static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *format, const char *label, char *bootTracks, int timeStamps, int uppercase)
+static int mkfs(struct cpmSuperBlock *drive, const char *devopts, const char *name, const char *format, const char *label, char *bootTracks, int timeStamps, int uppercase)
 {
   /* variables */ /*{{{*/
   unsigned int i;
   char buf[128];
   char firstbuf[128];
-  int fd;
+  char *secbuf;
   unsigned int bytes;
   unsigned int trkbytes;
+  int track, sector;
+  int recs;
   /*}}}*/
 
   /* open image file */ /*{{{*/
-  if ((fd = open(name, O_BINARY|O_CREAT|O_WRONLY, 0666)) < 0)
+  if ((boo=Device_open(&drive->dev, name, O_BINARY|O_CREAT|O_WRONLY, devopts)))
   {
-    boo=strerror(errno);
     return -1;
   }
+  track = 0;
+  sector = 0;
   /*}}}*/
   /* write system tracks */ /*{{{*/
   /* this initialises only whole tracks, so it skew is not an issue */
   trkbytes=drive->secLength*drive->sectrk;
-  for (i=0; i<trkbytes*drive->boottrk; i+=drive->secLength) if (write(fd, bootTracks+i, drive->secLength)!=(ssize_t)drive->secLength)
+  for (i=0; i<trkbytes*drive->boottrk; i+=drive->secLength)
   {
-    boo=strerror(errno);
-    close(fd);
-    return -1;
+    if ((boo=Device_writeSector(&drive->dev, track, sector, bootTracks+i)))
+    {
+      Device_close(&drive->dev);
+      return -1;
+    }
+    ++sector;
+    if (sector==drive->sectrk)
+    {
+      sector=0;
+      ++track;
+    }
   }
   /*}}}*/
   /* write directory */ /*{{{*/
   memset(buf,0xe5,128);
   bytes=drive->maxdir*32;
-  if (bytes%trkbytes) bytes=((bytes+trkbytes)/trkbytes)*trkbytes;
+  /* write a full sector */
+  if (bytes%drive->secLength) bytes=((bytes+drive->secLength)/drive->secLength)*drive->secLength;
   if (timeStamps && (drive->type==CPMFS_P2DOS || drive->type==CPMFS_DR3)) buf[3*32]=0x21;
   memcpy(firstbuf,buf,128);
   if (drive->type==CPMFS_DR3)
@@ -83,17 +95,31 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *forma
       firstbuf[27]=firstbuf[31]=min;
     }
   }
-  for (i=0; i<bytes; i+=128) if (write(fd, i==0 ? firstbuf : buf, 128)!=128)
+  secbuf=malloc(drive->secLength);
+  recs=drive->secLength/128;
+  for (i=0; i<bytes; i+=drive->secLength)
   {
-    boo=strerror(errno);
-    close(fd);
-    return -1;
+    int r;
+
+    for (r=0; r<recs; ++r) memcpy(secbuf+r*128, i==0 && r==0 ? firstbuf : buf, 128);
+    if ((boo=Device_writeSector(&drive->dev, track, drive->skewtab[sector], secbuf)))
+    {
+      Device_close(&drive->dev);
+      free(secbuf);
+      return -1;
+    }
+    ++sector;
+    if (sector==drive->sectrk)
+    {
+      sector=0;
+      ++track;
+    }
   }
+  free(secbuf);
   /*}}}*/
   /* close image file */ /*{{{*/
-  if (close(fd)==-1)
+  if ((boo=Device_close(&drive->dev)))
   {
-    boo=strerror(errno);
     return -1;
   }
   /*}}}*/
@@ -104,45 +130,72 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *forma
     static const char sig[] = "!!!TIME";
     unsigned int records;
     struct dsDate *ds;
-    struct cpmSuperBlock super;
+    struct cpmFile dsfile;
     const char *err;
+    struct utimbuf ut;
 
-    if ((err=Device_open(&super.dev,name,O_RDWR,NULL)))
+    Device_close(&drive->dev);
+    if ((err=Device_open(&drive->dev,name,O_RDWR,NULL)))
     {
       fprintf(stderr,"%s: can not open %s (%s)\n",cmd,name,err);
       exit(1);
     }
-    cpmReadSuper(&super,&root,format,uppercase);
+    cpmReadSuper(drive,&root,format,uppercase);
 
-    records=root.sb->maxdir/8;
+    records=(root.sb->maxdir+7)/8;
     if (!(ds=malloc(records*128)))
     {
-      cpmUmount(&super);
       return -1;
     }
     memset(ds,0,records*128);
     offset=15;
     for (i=0; i<records; i++)
     {
+      unsigned int cksum;
+
       for (j=0; j<7; j++,offset+=16)
       {
         *((char*)ds+offset) = sig[j];
       }
       /* skip checksum byte */
       offset+=16;
+
+      for (cksum=0,j=0; j<127; ++j) cksum+=*((unsigned char*)ds+i*128+j);
+      *((char*)ds+i*128+j)=cksum;
     }
 
-    /* Set things up so cpmSync will generate checksums and write the
-     * file.
+    /* The filesystem does not know about datestamper yet, because it
+     * was not there when it was mounted.
      */
-    if (cpmCreat(&root,"00!!!TIME&.DAT",&ino,0)==-1)
+
+    if (cpmCreat(&root,"00!!!TIME&.DAT",&ino,0222)==-1)
     {
       fprintf(stderr,"%s: Unable to create DateStamper file: %s\n",cmd,boo);
       return -1;
     }
-    root.sb->ds=ds;
-    root.sb->dirtyDs=1;
-    cpmUmount(&super);
+
+    if (cpmOpen(&ino,&dsfile,O_WRONLY) == -1
+        || cpmWrite(&dsfile,(char const*)ds,records*128) != records*128
+        || cpmClose(&dsfile) == -1)
+    {
+      fprintf(stderr,"%s: Unable to write DateStamper file: %s\n",cmd,boo);
+      return -1;
+    }
+
+    cpmChmod(&ino, 0);
+
+    cpmUmount(drive);
+    if ((err=Device_open(&drive->dev,name,O_RDWR,NULL)))
+    {
+      fprintf(stderr,"%s: can not open %s (%s)\n",cmd,name,err);
+      exit(1);
+    }
+    cpmReadSuper(drive,&root,format,uppercase);
+
+    cpmNamei(&root,"00!!!TIME&.DAT",&ino);
+    time(&ut.actime);
+    time(&ut.modtime);
+    cpmUtime(&ino,&ut);
   }
   /*}}}*/
 
@@ -156,6 +209,7 @@ int main(int argc, char *argv[]) /*{{{*/
 {
   char *image;
   const char *format;
+  const char *devopts=NULL;
   int uppercase=0;
   int c,usage=0;
   struct cpmSuperBlock drive;
@@ -167,8 +221,9 @@ int main(int argc, char *argv[]) /*{{{*/
   const char *boot[4]={(const char*)0,(const char*)0,(const char*)0,(const char*)0};
 
   if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
-  while ((c=getopt(argc,argv,"b:f:L:tuh?"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"T:b:f:L:tuh?"))!=EOF) switch(c)
   {
+    case 'T': devopts=optarg; break;
     case 'b':
     {
       if (boot[0]==(const char*)0) boot[0]=optarg;
@@ -197,36 +252,42 @@ int main(int argc, char *argv[]) /*{{{*/
   drive.dev.opened=0;
   cpmReadSuper(&drive,&root,format,uppercase);
   bootTrackSize=drive.boottrk*drive.secLength*drive.sectrk;
-  if ((bootTracks=malloc(bootTrackSize))==(void*)0)
+  if (bootTrackSize)
   {
-    fprintf(stderr,"%s: can not allocate boot track buffer: %s\n",cmd,strerror(errno));
-    exit(1);
-  }
-  memset(bootTracks,0xe5,bootTrackSize);
-  used=0; 
-  for (c=0; c<4 && boot[c]; ++c)
-  {
-    int fd;
-    size_t size;
-
-    if ((fd=open(boot[c],O_BINARY|O_RDONLY))==-1)
+    if ((bootTracks=malloc(bootTrackSize))==(void*)0)
     {
-      fprintf(stderr,"%s: can not open %s: %s\n",cmd,boot[c],strerror(errno));
+      fprintf(stderr,"%s: can not allocate boot track buffer: %s\n",cmd,strerror(errno));
       exit(1);
     }
-    size=read(fd,bootTracks+used,bootTrackSize-used);
+    memset(bootTracks,0xe5,bootTrackSize);
+    used=0; 
+    for (c=0; c<4 && boot[c]; ++c)
+    {
+      int fd;
+      size_t size;
+
+      if ((fd=open(boot[c],O_BINARY|O_RDONLY))==-1)
+      {
+        fprintf(stderr,"%s: can not open %s: %s\n",cmd,boot[c],strerror(errno));
+        exit(1);
+      }
+      size=read(fd,bootTracks+used,bootTrackSize-used);
 #if 0
-    fprintf(stderr,"%d %04x %s\n",c,used+0x800,boot[c]);
+      fprintf(stderr,"%d %04x %s\n",c,used+0x800,boot[c]);
 #endif
-    if (size%drive.secLength) size=(size|(drive.secLength-1))+1;
-    used+=size;
-    close(fd);
+      if (size%drive.secLength) size=(size|(drive.secLength-1))+1;
+      used+=size;
+      close(fd);
+    }
   }
-  if (mkfs(&drive,image,format,label,bootTracks,timeStamps,uppercase)==-1)
+  else bootTracks=(char*)0;
+  if (mkfs(&drive,devopts,image,format,label,bootTracks,timeStamps,uppercase)==-1)
   {
     fprintf(stderr,"%s: can not make new file system: %s\n",cmd,boo);
     exit(1);
   }
-  else exit(0);
+  if (bootTracks) free(bootTracks);
+  cpmUmount(&drive);
+  exit(0);
 }
 /*}}}*/

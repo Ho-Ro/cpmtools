@@ -72,14 +72,13 @@ const char *Device_open(struct Device *this, const char *filename, int mode, con
 const char *Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks, off_t offset, const char *libdskGeometry)
 {
   char *boo;
+  int probeOk;
 
   this->secLength=secLength;
   this->sectrk=sectrk;
   this->tracks=tracks;
-  /* Ho-Ro: Allow offset sizes that are no multiples of sector lenght. */
-  /* Needed for yaze-ag ydsk format that has a header size of 128 byte */
-  /* regardless of its sector length (that can be up to 2048 bytes).   */
-  /* assert(offset%secLength==0); */
+  /* Must be an even multiple of sector size */
+  assert(offset%secLength==0);
   this->offset=offset;
   /* If a geometry is named in diskdefs, use it */
   if (libdskGeometry && libdskGeometry[0])
@@ -87,11 +86,22 @@ const char *Device_setGeometry(struct Device *this, int secLength, int sectrk, i
     return lookupFormat(&this->geom, libdskGeometry);
   }
   
+  /* Did the autoprobe guess right about the number of sectors & cylinders? */
+  if (this->geom.dg_cylinders * this->geom.dg_heads == tracks)
+  {
+    probeOk = 1;
+  }
+  else
+  {
+    /* If not, reset to a minimal geometry (to undo any randomness from
+     * a failed autoprobe), and guess some parameters */
+    probeOk = 0;
+    dg_stdformat(&this->geom, FMT_180K, NULL, NULL);
+  }
   this->geom.dg_secsize   = secLength;
   this->geom.dg_sectors   = sectrk;
-  /* Did the autoprobe guess right about the number of sectors & cylinders? */
-  if (this->geom.dg_cylinders * this->geom.dg_heads == tracks) return NULL;
-  /* Otherwise we guess: <= 43 tracks: single-sided. Else double. This
+  if (probeOk) return NULL;
+  /* We guess: <= 43 tracks: single-sided. Else double. This
    * fails for 80-track single-sided if there are any such beasts */
   if (tracks <= 43) 
   {

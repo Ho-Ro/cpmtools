@@ -17,7 +17,7 @@ const char *Device_open(struct Device *this, const char *filename, int mode, con
   {
     return "POSIX driver accepts no options (build compiled without libdsk)";
   }
-  this->fd=open(filename,mode);
+  this->fd=open(filename,mode,0666);
   this->opened=(this->fd==-1?0:1);
   return ((this->fd==-1)?strerror(errno):(const char*)0);
 }
@@ -35,14 +35,18 @@ const char *Device_setGeometry(struct Device *this, int secLength, int sectrk, i
 /* Device_close          -- Close an image file                     */ /*{{{*/
 const char *Device_close(struct Device *this)
 {
-  this->opened=0;
-  return ((close(this->fd)==-1)?strerror(errno):(const char*)0);
+  if (this->opened)
+  {
+    this->opened=0;
+    return ((close(this->fd)==-1)?strerror(errno):(const char*)0);
+  }
+  return 0;
 }
 /*}}}*/
 /* Device_readSector     -- read a physical sector                  */ /*{{{*/
 const char *Device_readSector(const struct Device *this, int track, int sector, char *buf)
 {
-  int res;
+  ssize_t res;
 
   assert(this);
   assert(sector>=0);
@@ -54,17 +58,19 @@ const char *Device_readSector(const struct Device *this, int track, int sector, 
   {
     return strerror(errno);
   }
-  if ((res=read(this->fd, buf, this->secLength)) != this->secLength) 
+  assert(this->secLength>=0);
+  if ((res=read(this->fd, buf, (size_t)this->secLength)) != this->secLength) 
   {
     if (res==-1)
     {
       return strerror(errno);
     }
     else
-{
-printf("len %d\n",this->secLength-res);
- memset(buf+res,0,this->secLength-res); /* hit end of disk image */
-}
+    {
+      assert(res>=0);
+      assert(res<this->secLength);
+      memset(buf+res,0,(size_t)(this->secLength-res)); /* hit end of disk image */
+    }
   }
   return (const char*)0;
 }
@@ -76,11 +82,15 @@ const char *Device_writeSector(const struct Device *this, int track, int sector,
   assert(sector<this->sectrk);
   assert(track>=0);
   assert(track<this->tracks);
+#if 0
+  fprintf(stderr,"write sector %d/%d\n",track,sector);
+#endif
   if (lseek(this->fd,(off_t)(((sector+track*this->sectrk)*this->secLength)+this->offset),SEEK_SET)==-1)
   {
     return strerror(errno);
   }
-  if (write(this->fd, buf, this->secLength) == this->secLength) return (const char*)0;
+  assert(this->secLength>=0);
+  if (write(this->fd, buf, (size_t)this->secLength) == this->secLength) return (const char*)0;
   return strerror(errno);
 }
 /*}}}*/
