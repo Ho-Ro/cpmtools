@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# file ~/.local/share/mc/extfs.d/cpmimage
+# file ~/.local/share/mc/extfs.d/cpmfs
 # mc extfs for CP/M image files using cpmtools
 # suported image formats:
 #   Z80-MBC2:   Regex=^DS[0-2]N(0[0-9]|1[0-5])\.DSK$
